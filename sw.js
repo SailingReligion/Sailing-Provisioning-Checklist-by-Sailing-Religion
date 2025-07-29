@@ -1,10 +1,11 @@
 const CACHE_NAME = 'sailing-religion-provisioning-v1';
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/',
+  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/index.html',
+  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/manifest.json',
+  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/icon-192x192.png',
+  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/icon-512x512.png'
 ];
 
 // Install event - cache resources
