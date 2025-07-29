@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offshore Provisioning Checklist - Sailing Religion</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sailing Religion">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(30, 58, 138, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '⚓';
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2rem;
+            color: #fbbf24;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            color: #e0f2fe;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: linear-gradient(90deg, #1e40af, #2563eb);
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .section-header:hover {
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-icon {
+            font-size: 1.5rem;
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+            color: #fbbf24;
+        }
+
+        .section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            padding: 20px;
+            display: block;
+        }
+
+        .section.collapsed .section-content {
+            display: none;
+        }
+
+        .item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            padding-left: 10px;
+        }
+
+        .item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            accent-color: #fbbf24;
+            cursor: pointer;
+        }
+
+        .item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .item.checked label {
+            text-decoration: line-through;
+            opacity: 0.6;
+            color: #94a3b8;
+        }
+
+        .custom-item {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .custom-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .custom-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 1rem;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+        }
+
+        .add-btn {
+            padding: 12px 20px;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            color: #1e3a8a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.3);
+        }
+
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .progress-bar {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .progress-fill {
+            height: 10px;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+            margin: 10px 0;
+        }
+
+        .progress-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fbbf24;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .custom-input-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Offshore Provisioning</h1>
+            <p>Complete checklist for your next sailing adventure</p>
+        </div>
+        
+        <div class="content">
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-text">Progress: <span id="progress-percentage">0%</span></div>
+                <div style="background: rgba(59, 130, 246, 0.3); border-radius: 5px;">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Drinks & Hot Beverages Section -->
+            <div class="section" data-section="drinks">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">☕</span>
+                        Drinks & Hot Beverages
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="item">
+                        <input type="checkbox" id="coffee">
+                        <label for="coffee">Coffee (ground/instant)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="tea-bags">
+                        <label for="tea-bags">Tea bags (variety pack)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="hot-chocolate">
+                        <label for="hot-chocolate">Hot chocolate powder</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="water-bottles">
+                        <label for="water-bottles">Bottled water (backup supply)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="sports-drinks">
+                        <label for="sports-drinks">Sports drinks/electrolytes</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="fruit-juices">
+                        <label for="fruit-juices">Fruit juices (long-life)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="beer-wine">
+                        <label for="beer-wine">Beer/Wine (celebration supply)</label>
+                    </div>
+                    
+                    <div class="custom-item">
+                        <div class="custom-input-container">
+                            <input type="text" class="custom-input" placeholder="Add custom drink item...">
+                            <button class="add-btn" onclick="addCustomItem('drinks')">Add</button>
+                        </div>
+                        <div class="custom-items-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Non-Perishable Food Section -->
+            <div class="section" data-section="non-perishable">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">🥫</span>
+                        Non-Perishable Food
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="item">
+                        <input type="checkbox" id="canned-beans">
+                        <label for="canned-beans">Canned beans (variety)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="canned-tomatoes">
+                        <label for="canned-tomatoes">Canned tomatoes</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="pasta">
+                        <label for="pasta">Pasta (various shapes)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="rice">
+                        <label for="rice">Rice (long grain)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="quinoa">
+                        <label for="quinoa">Quinoa</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="canned-fish">
+                        <label for="canned-fish">Canned fish (tuna, salmon)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="nuts-seeds">
+                        <label for="nuts-seeds">Nuts and seeds</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="dried-fruits">
+                        <label for="dried-fruits">Dried fruits</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="oatmeal">
+                        <label for="oatmeal">Oatmeal/Cereal</label>
+                    </div>
+                    
+                    <div class="custom-item">
+                        <div class="custom-input-container">
+                            <input type="text" class="custom-input" placeholder="Add custom non-perishable item...">
+                            <button class="add-btn" onclick="addCustomItem('non-perishable')">Add</button>
+                        </div>
+                        <div class="custom-items-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fresh Produce Section -->
+            <div class="section" data-section="fresh-produce">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">🥬</span>
+                        Fresh Produce
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="item">
+                        <input type="checkbox" id="onions">
+                        <label for="onions">Onions (long-lasting varieties)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="potatoes">
+                        <label for="potatoes">Potatoes</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="carrots">
+                        <label for="carrots">Carrots</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="cabbage">
+                        <label for="cabbage">Cabbage</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="apples">
+                        <label for="apples">Apples</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="oranges">
+                        <label for="oranges">Oranges/Citrus fruits</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="garlic">
+                        <label for="garlic">Garlic</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="ginger">
+                        <label for="ginger">Fresh ginger</label>
+                    </div>
+                    
+                    <div class="custom-item">
+                        <div class="custom-input-container">
+                            <input type="text" class="custom-input" placeholder="Add custom produce item...">
+                            <button class="add-btn" onclick="addCustomItem('fresh-produce')">Add</button>
+                        </div>
+                        <div class="custom-items-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bread & Crackers Section -->
+            <div class="section" data-section="bread-crackers">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">🍞</span>
+                        Bread & Crackers
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="item">
+                        <input type="checkbox" id="hardtack">
+                        <label for="hardtack">Hardtack/Ship biscuits</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="crackers">
+                        <label for="crackers">Saltine crackers</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="whole-grain-crackers">
+                        <label for="whole-grain-crackers">Whole grain crackers</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="bread-flour">
+                        <label for="bread-flour">Bread flour (for baking)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="yeast">
+                        <label for="yeast">Dry yeast</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="tortillas">
+                        <label for="tortillas">Tortillas (long-lasting)</label>
+                    </div>
+                    
+                    <div class="custom-item">
+                        <div class="custom-input-container">
+                            <input type="text" class="custom-input" placeholder="Add custom bread/cracker item...">
+                            <button class="add-btn" onclick="addCustomItem('bread-crackers')">Add</button>
+                        </div>
+                        <div class="custom-items-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spices & Condiments Section -->
+            <div class="section" data-section="spices-condiments">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">🧂</span>
+                        Spices & Condiments
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="item">
+                        <input type="checkbox" id="sea-salt">
+                        <label for="sea-salt">Sea salt</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="black-pepper">
+                        <label for="black-pepper">Black pepper</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="olive-oil">
+                        <label for="olive-oil">Olive oil</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="vinegar">
+                        <label for="vinegar">Vinegar (white/apple cider)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="hot-sauce">
+                        <label for="hot-sauce">Hot sauce</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="soy-sauce">
+                        <label for="soy-sauce">Soy sauce</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="herbs-dried">
+                        <label for="herbs-dried">Dried herbs (oregano, basil, thyme)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="curry-powder">
+                        <label for="curry-powder">Curry powder</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="paprika">
+                        <label for="paprika">Paprika</label>
+                    </div>
+                    
+                    <div class="custom-item">
+                        <div class="custom-input-container">
+                            <input type="text" class="custom-input" placeholder="Add custom spice/condiment...">
+                            <button class="add-btn" onclick="addCustomItem('spices-condiments')">Add</button>
+                        </div>
+                        <div class="custom-items-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fresh Meat Section -->
+            <div class="section" data-section="fresh-meat">
+                <div class="section-header">
+                    <div class="section-title">
+                        <span class="section-icon">🥩</span>
+                        Fresh Meat
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="section-content">
+                    <div class="item">
+                        <input type="checkbox" id="chicken-breast">
+                        <label for="chicken-breast">Chicken breast (vacuum sealed)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="ground-beef">
+                        <label for="ground-beef">Ground beef (frozen)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="pork-chops">
+                        <label for="pork-chops">Pork chops</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="fish-fillets">
+                        <label for="fish-fillets">Fresh fish fillets</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="bacon">
+                        <label for="bacon">Bacon (vacuum sealed)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="sausages">
+                        <label for="sausages">Sausages (cured/smoked)</label>
+                    </div>
+                    <div class="item">
+                        <input type="checkbox" id="eggs">
+                        <label for="eggs">Fresh eggs</label>
+                    </div>
+                    
+                    <div class="custom-item">
+                        <div class="custom-input-container">
+                            <input type="text" class="custom-input" placeholder="Add custom meat item...">
+                            <button class="add-btn" onclick="addCustomItem('fresh-meat')">Add</button>
+                        </div>
+                        <div class="custom-items-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // Main Application Logic
+        class ProvisioningChecklist {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.loadProgress();
+                this.setupEventListeners();
+                this.updateProgress();
+            }
+
+            // Setup all event listeners
+            setupEventListeners() {
+                // Section toggle functionality
+                document.querySelectorAll('.section-header').forEach(header => {
+                    header.addEventListener('click', (e) => {
+                        const section = e.currentTarget.parentElement;
+                        section.classList.toggle('collapsed');
+                    });
+                });
+
+                // Checkbox change events
+                document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        this.handleCheckboxChange(e);
+                    });
+                });
+
+                // Custom input enter key
+                document.querySelectorAll('.custom-input').forEach(input => {
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            const section = input.closest('.section').dataset.section;
+                            this.addCustomItem(section);
+                        }
+                    });
+                });
+            }
+
+            // Handle checkbox state changes
+            handleCheckboxChange(e) {
+                const item = e.target.closest('.item');
+                if (e.target.checked) {
+                    item.classList.add('checked');
+                } else {
+                    item.classList.remove('checked');
+                }
+                this.saveProgress();
+                this.updateProgress();
+            }
+
+            // Add custom item to section
+            addCustomItem(sectionName) {
+                const section = document.querySelector(`[data-section="${sectionName}"]`);
+                const input = section.querySelector('.custom-input');
+                const customList = section.querySelector('.custom-items-list');
+                
+                const itemText = input.value.trim();
+                if (!itemText) return;
+
+                // Create unique ID for custom item
+                const itemId = `custom-${sectionName}-${Date.now()}`;
+                
+                // Create custom item element
+                const customItem = document.createElement('div');
+                customItem.className = 'item';
+                customItem.innerHTML = `
+                    <input type="checkbox" id="${itemId}">
+                    <label for="${itemId}">${itemText}</label>
+                    <button class="delete-btn" onclick="app.deleteCustomItem('${itemId}')">Delete</button>
+                `;
+
+                // Add event listener to new checkbox
+                const checkbox = customItem.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', (e) => {
+                    this.handleCheckboxChange(e);
+                });
+
+                customList.appendChild(customItem);
+                input.value = '';
+                
+                this.saveCustomItems();
+                this.updateProgress();
+            }
+
+            // Delete custom item
+            deleteCustomItem(itemId) {
+                const item = document.getElementById(itemId).closest('.item');
+                item.remove();
+                this.saveCustomItems();
+                this.updateProgress();
+            }
+
+            // Calculate and update progress
+            updateProgress() {
+                const totalCheckboxes = document.querySelectorAll('input[type="checkbox"]').length;
+                const checkedBoxes = document.querySelectorAll('input[type="checkbox"]:checked').length;
+                
+                const percentage = totalCheckboxes > 0 ? Math.round((checkedBoxes / totalCheckboxes) * 100) : 0;
+                
+                document.getElementById('progress-percentage').textContent = `${percentage}%`;
+                document.getElementById('progress-fill').style.width = `${percentage}%`;
+            }
+
+            // Save progress to localStorage
+            saveProgress() {
+                const progress = {};
+                document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    progress[checkbox.id] = checkbox.checked;
+                });
+                localStorage.setItem('provisioning-progress', JSON.stringify(progress));
+            }
+
+            // Save custom items to localStorage
+            saveCustomItems() {
+                const customItems = {};
+                document.querySelectorAll('.section').forEach(section => {
+                    const sectionName = section.dataset.section;
+                    const customList = section.querySelector('.custom-items-list');
+                    const items = [];
+                    
+                    customList.querySelectorAll('.item').forEach(item => {
+                        const checkbox = item.querySelector('input[type="checkbox"]');
+                        const label = item.querySelector('label');
+                        items.push({
+                            id: checkbox.id,
+                            text: label.textContent,
+                            checked: checkbox.checked
+                        });
+                    });
+                    
+                    customItems[sectionName] = items;
+                });
+                
+                localStorage.setItem('provisioning-custom-items', JSON.stringify(customItems));
+            }
+
+            // Load progress from localStorage
+            loadProgress() {
+                // Load checkbox states
+                const progress = JSON.parse(localStorage.getItem('provisioning-progress') || '{}');
+                Object.keys(progress).forEach(checkboxId => {
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox) {
+                        checkbox.checked = progress[checkboxId];
+                        const item = checkbox.closest('.item');
+                        if (progress[checkboxId]) {
+                            item.classList.add('checked');
+                        }
+                    }
+                });
+
+                // Load custom items
+                const customItems = JSON.parse(localStorage.getItem('provisioning-custom-items') || '{}');
+                Object.keys(customItems).forEach(sectionName => {
+                    const section = document.querySelector(`[data-section="${sectionName}"]`);
+                    if (!section) return;
+                    
+                    const customList = section.querySelector('.custom-items-list');
+                    customItems[sectionName].forEach(item => {
+                        const customItem = document.createElement('div');
+                        customItem.className = 'item';
+                        if (item.checked) customItem.classList.add('checked');
+                        
+                        customItem.innerHTML = `
+                            <input type="checkbox" id="${item.id}" ${item.checked ? 'checked' : ''}>
+                            <label for="${item.id}">${item.text}</label>
+                            <button class="delete-btn" onclick="app.deleteCustomItem('${item.id}')">Delete</button>
+                        `;
+
+                        // Add event listener to restored checkbox
+                        const checkbox = customItem.querySelector('input[type="checkbox"]');
+                        checkbox.addEventListener('change', (e) => {
+                            this.handleCheckboxChange(e);
+                        });
+
+                        customList.appendChild(customItem);
+                    });
+                });
+            }
+        }
+
+        // Global function for adding custom items (called from HTML)
+        function addCustomItem(sectionName) {
+            app.addCustomItem(sectionName);
+        }
+
+        // Initialize the application
+        const app = new ProvisioningChecklist();
+    </script>
+</body>
+</html>
