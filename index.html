@@ -15,6 +15,12 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
     <link rel="apple-touch-icon" href="icon-192x192.png">
+
+    <!-- Third-party libraries (used by Share / Import features) -->
+    <!-- QR code generation -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- QR code scanning (camera) -->
+    <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
     <style>
         * {
@@ -442,6 +448,239 @@
                 flex-direction: column;
             }
         }
+
+        /* ===== New toolbar buttons (Export / Share / Import) ===== */
+        .export-btn {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: #fff;
+        }
+        .export-btn:hover {
+            background: linear-gradient(90deg, #059669, #047857);
+            transform: translateY(-2px);
+        }
+        .share-btn {
+            background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+            color: #fff;
+        }
+        .share-btn:hover {
+            background: linear-gradient(90deg, #7c3aed, #6d28d9);
+            transform: translateY(-2px);
+        }
+        .import-btn {
+            background: linear-gradient(90deg, #0ea5e9, #0284c7);
+            color: #fff;
+        }
+        .import-btn:hover {
+            background: linear-gradient(90deg, #0284c7, #0369a1);
+            transform: translateY(-2px);
+        }
+
+        /* ===== Toast notifications ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: calc(100% - 40px);
+            max-width: 420px;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 14px 18px;
+            border-radius: 10px;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: auto;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success { background: rgba(16, 185, 129, 0.92); }
+        .toast.error   { background: rgba(239, 68, 68, 0.92); }
+        .toast.info    { background: rgba(37, 99, 235, 0.92); }
+
+        /* ===== Modal extras (Share / Import / Update) ===== */
+        .modal-overlay { backdrop-filter: blur(6px); }
+
+        .primary-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 18px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            color: #1e3a8a;
+            transition: all 0.3s ease;
+        }
+        .primary-btn:hover {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            transform: translateY(-2px);
+        }
+        .secondary-btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: rgba(59, 130, 246, 0.15);
+            color: #f8fafc;
+            transition: all 0.3s ease;
+        }
+        .secondary-btn:hover { background: rgba(59, 130, 246, 0.3); }
+
+        /* Update modal improvement list */
+        .update-list {
+            list-style: none;
+            margin: 12px 0 18px;
+            padding: 0;
+        }
+        .update-list li {
+            padding: 8px 0 8px 28px;
+            position: relative;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .update-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        /* Share modal */
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 16px auto;
+            background: #fff;
+            padding: 12px;
+            border-radius: 12px;
+            width: fit-content;
+        }
+        .share-link-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .share-link-box input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 0.85rem;
+        }
+        .short-code {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #fbbf24;
+            margin: 10px 0 4px;
+        }
+        .valid-note {
+            text-align: center;
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-bottom: 6px;
+        }
+
+        /* Import option cards */
+        .import-option {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .import-option h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .import-option input[type="file"] {
+            width: 100%;
+            color: #f8fafc;
+            font-size: 0.9rem;
+        }
+        .import-option textarea {
+            width: 100%;
+            min-height: 70px;
+            padding: 10px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 0.9rem;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+        #qr-reader { width: 100%; margin-top: 10px; border-radius: 8px; overflow: hidden; }
+
+        /* Token helper box */
+        .token-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 8px;
+        }
+        .token-box label { display:block; font-size: 0.9rem; margin-bottom: 8px; }
+        .token-box input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .token-box a { color: #fbbf24; }
+
+        /* Import-mode choice buttons */
+        .mode-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .mode-buttons button { flex: 1; min-width: 120px; }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -463,6 +702,9 @@
                 </div>
                 <div class="toolbar">
                     <button type="button" class="tool-btn calc-btn" onclick="app.openCalculator()">🧮 Water Calculator</button>
+                    <button type="button" class="tool-btn export-btn" onclick="app.exportData()">💾 Export</button>
+                    <button type="button" class="tool-btn share-btn" onclick="app.openShareModal()">📤 Share</button>
+                    <button type="button" class="tool-btn import-btn" onclick="app.openImportModal()">📥 Import</button>
                     <button type="button" class="tool-btn reset-btn" onclick="app.resetAll()">♻️ Reset All</button>
                 </div>
             </div>
@@ -813,6 +1055,87 @@
             </div>
         </div>
     </div>
+
+    <!-- Force Update Modal (non-dismissible) -->
+    <div id="update-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="update-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="update-title">🚀 New Version Available</h2>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint">A new version of the app is ready. Please update to get the
+                    latest features and fixes. This only takes a second.</p>
+                <ul class="update-list">
+                    <li>Export your checklist as a JSON backup file</li>
+                    <li>Share your list across devices with a link &amp; QR code</li>
+                    <li>Import data from a file, link, code or QR scan</li>
+                    <li>Performance and reliability improvements</li>
+                </ul>
+                <button type="button" class="primary-btn" onclick="app.applyUpdate()">Update Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="share-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="share-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="share-title">📤 Share Your List</h2>
+                <button type="button" class="modal-close" onclick="app.closeShareModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body" id="share-body">
+                <!-- Filled dynamically: token prompt, loading, result or error -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="import-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="import-title">📥 Import Data</h2>
+                <button type="button" class="modal-close" onclick="app.closeImportModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-option">
+                    <h3>📄 Upload JSON File</h3>
+                    <input type="file" id="import-file" accept=".json,application/json">
+                </div>
+                <div class="import-option">
+                    <h3>🔗 Paste Link / Code</h3>
+                    <textarea id="import-paste" placeholder="Paste a share link, gist ID, or raw backup JSON here..."></textarea>
+                    <button type="button" class="secondary-btn" onclick="app.importFromPaste()">Import from Text</button>
+                </div>
+                <div class="import-option">
+                    <h3>📷 Scan QR Code</h3>
+                    <button type="button" class="secondary-btn" id="qr-scan-btn" onclick="app.toggleQrScanner()">Start Camera</button>
+                    <div id="qr-reader"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Mode Choice Modal (Overwrite vs Merge) -->
+    <div id="mode-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="mode-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="mode-title">Import Options</h2>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint">How would you like to apply the imported data?</p>
+                <div class="mode-buttons">
+                    <button type="button" class="primary-btn" onclick="app.resolveImportMode('overwrite')">Overwrite</button>
+                    <button type="button" class="secondary-btn" onclick="app.resolveImportMode('merge')">Merge</button>
+                </div>
+                <div class="mode-buttons">
+                    <button type="button" class="secondary-btn" onclick="app.resolveImportMode(null)">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
     <script>
         // PWA Service Worker Registration
