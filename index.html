@@ -420,6 +420,46 @@
             line-height: 1.5;
         }
 
+        /* Force Update modal */
+        .update-list {
+            list-style: none;
+            margin: 0 0 20px;
+            padding: 0;
+        }
+
+        .update-list li {
+            position: relative;
+            padding: 6px 0 6px 26px;
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+
+        .update-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 6px;
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            color: #1e3a8a;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: filter 0.2s ease;
+        }
+
+        .primary-btn:hover {
+            filter: brightness(1.08);
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -814,6 +854,26 @@
         </div>
     </div>
 
+    <!-- Force Update Modal (non-dismissible: no close button, no overlay-click, no Escape) -->
+    <div id="update-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="update-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="update-title">🚀 New Version Available</h2>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint">A new version of the app is ready. Please update to get the
+                    latest features and fixes. This only takes a second and your checklist is kept.</p>
+                <ul class="update-list">
+                    <li>Water provisioning calculator</li>
+                    <li>Quantities and progress tracking for every item</li>
+                    <li>Reset all with confirmation</li>
+                    <li>Performance and reliability improvements</li>
+                </ul>
+                <button type="button" class="primary-btn" onclick="app.applyUpdate()">Update Now</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
@@ -828,6 +888,11 @@
             });
         }
 
+        // Current app version. Bump this on each release to trigger the
+        // mandatory update notification for returning users.
+        const APP_VERSION = '2.1';
+        const VERSION_KEY = 'provisioning-app-version';
+
         // Main Application Logic
         class ProvisioningChecklist {
             constructor() {
@@ -841,6 +906,54 @@
                 this.setupEventListeners();
                 this.setupCalculator();
                 this.updateProgress();
+                this.checkVersion();           // show mandatory update modal if needed
+            }
+
+            // Decide whether the mandatory update modal should be shown.
+            // - Stored version matches APP_VERSION  -> nothing to do.
+            // - No stored version + existing data   -> returning user, show modal.
+            // - No stored version + no data         -> fresh install, version silently.
+            // - Stored version differs              -> show modal.
+            checkVersion() {
+                const stored = localStorage.getItem(VERSION_KEY);
+                if (stored === APP_VERSION) return;
+                if (!stored) {
+                    const hasData =
+                        !!localStorage.getItem('provisioning-progress') ||
+                        !!localStorage.getItem('provisioning-custom-items') ||
+                        !!localStorage.getItem('provisioning-quantities');
+                    if (!hasData) {
+                        // Brand new user: record the version, no prompt needed.
+                        localStorage.setItem(VERSION_KEY, APP_VERSION);
+                        return;
+                    }
+                }
+                this.showUpdateModal();
+            }
+
+            showUpdateModal() {
+                const overlay = document.getElementById('update-overlay');
+                if (overlay) overlay.classList.add('open');
+            }
+
+            // Store the new version, then clear the PWA caches and refresh the
+            // service worker so the reload actually fetches the latest assets
+            // (a plain reload would be served the stale cached page).
+            async applyUpdate() {
+                localStorage.setItem(VERSION_KEY, APP_VERSION);
+                try {
+                    if ('caches' in window) {
+                        const names = await caches.keys();
+                        await Promise.all(names.map(n => caches.delete(n)));
+                    }
+                    if ('serviceWorker' in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(regs.map(r => r.unregister()));
+                    }
+                } catch (e) {
+                    // Ignore cleanup errors and reload regardless.
+                }
+                window.location.reload(true);
             }
 
             // Inject a quantity number input into every preset checklist item.

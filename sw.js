@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sailing-religion-provisioning-v2';
+const CACHE_NAME = 'sailing-religion-provisioning-v3';
 
 // Relative paths resolved against the Service Worker scope.
 // This works both on GitHub Pages (served under a sub-path) and locally.
