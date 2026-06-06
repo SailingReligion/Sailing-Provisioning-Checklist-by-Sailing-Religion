@@ -253,6 +253,173 @@
             color: #fbbf24;
         }
 
+        /* Quantity input per item */
+        .qty-input {
+            width: 64px;
+            margin-left: 10px;
+            padding: 6px 8px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .qty-input:focus {
+            outline: none;
+            border-color: #fbbf24;
+        }
+
+        /* Toolbar with Reset / Calculator buttons */
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .calc-btn {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            color: #f8fafc;
+        }
+
+        .calc-btn:hover {
+            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+        }
+
+        .reset-btn {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            color: #fff;
+        }
+
+        .reset-btn:hover {
+            background: linear-gradient(90deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(90deg, #1e40af, #2563eb);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #fbbf24;
+            font-size: 1.8rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-hint {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin-bottom: 18px;
+            line-height: 1.4;
+        }
+
+        .calc-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .calc-field label {
+            font-size: 0.95rem;
+        }
+
+        .calc-field input {
+            width: 90px;
+            padding: 8px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            color: #f8fafc;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .calc-field input:focus {
+            outline: none;
+            border-color: #fbbf24;
+        }
+
+        .calc-result {
+            margin-top: 20px;
+            padding: 18px;
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .calc-result-main {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .calc-result-sub {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -287,9 +454,16 @@
         <div class="content">
             <!-- Progress Bar -->
             <div class="progress-bar">
-                <div class="progress-text">Progress: <span id="progress-percentage">0%</span></div>
+                <div class="progress-text">
+                    <span id="progress-count">0 of 0 items</span>
+                    <span id="progress-percentage">(0%)</span>
+                </div>
                 <div style="background: rgba(59, 130, 246, 0.3); border-radius: 5px;">
                     <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                </div>
+                <div class="toolbar">
+                    <button type="button" class="tool-btn calc-btn" onclick="app.openCalculator()">🧮 Water Calculator</button>
+                    <button type="button" class="tool-btn reset-btn" onclick="app.resetAll()">♻️ Reset All</button>
                 </div>
             </div>
 
@@ -605,6 +779,41 @@
         </div>
     </div>
 
+    <!-- Nautical Water Calculator Modal -->
+    <div id="calc-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="calc-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="calc-title">🧮 Water Provisioning Calculator</h2>
+                <button type="button" class="modal-close" onclick="app.closeCalculator()" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint">Estimate the fresh water you need to carry, based on the
+                    common offshore guideline of <strong>4 litres per person per day</strong>
+                    (drinking, cooking and minimal hygiene).</p>
+                <div class="calc-field">
+                    <label for="calc-people">Number of crew (people)</label>
+                    <input type="number" id="calc-people" min="1" step="1" value="2">
+                </div>
+                <div class="calc-field">
+                    <label for="calc-days">Passage length (days)</label>
+                    <input type="number" id="calc-days" min="1" step="1" value="7">
+                </div>
+                <div class="calc-field">
+                    <label for="calc-litres">Litres per person / day</label>
+                    <input type="number" id="calc-litres" min="0" step="0.5" value="4">
+                </div>
+                <div class="calc-field">
+                    <label for="calc-reserve">Safety reserve (%)</label>
+                    <input type="number" id="calc-reserve" min="0" step="5" value="20">
+                </div>
+                <div class="calc-result" id="calc-result">
+                    <div class="calc-result-main"><span id="calc-total">0</span> L total</div>
+                    <div class="calc-result-sub" id="calc-breakdown"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
@@ -626,9 +835,36 @@
             }
 
             init() {
+                this.addQuantityInputs();      // inject qty input into preset items
                 this.loadProgress();
+                this.loadQuantities();
                 this.setupEventListeners();
+                this.setupCalculator();
                 this.updateProgress();
+            }
+
+            // Inject a quantity number input into every preset checklist item.
+            addQuantityInputs() {
+                document.querySelectorAll('.section-content > .item').forEach(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    if (checkbox && !item.querySelector('.qty-input')) {
+                        item.appendChild(this.createQuantityInput(checkbox.id));
+                    }
+                });
+            }
+
+            // Build a quantity input bound to a given item id.
+            createQuantityInput(itemId) {
+                const qty = document.createElement('input');
+                qty.type = 'number';
+                qty.min = '0';
+                qty.step = '1';
+                qty.className = 'qty-input';
+                qty.placeholder = 'Qty';
+                qty.setAttribute('aria-label', 'Quantity');
+                qty.dataset.qtyFor = itemId;
+                qty.addEventListener('input', () => this.saveQuantities());
+                return qty;
             }
 
             // Setup all event listeners
@@ -703,6 +939,7 @@
 
                 customItem.appendChild(checkbox);
                 customItem.appendChild(label);
+                customItem.appendChild(this.createQuantityInput(itemId));
                 customItem.appendChild(deleteBtn);
                 return customItem;
             }
@@ -732,6 +969,7 @@
                 const item = document.getElementById(itemId).closest('.item');
                 item.remove();
                 this.saveCustomItems();
+                this.saveQuantities();
                 this.updateProgress();
             }
 
@@ -742,8 +980,103 @@
                 
                 const percentage = totalCheckboxes > 0 ? Math.round((checkedBoxes / totalCheckboxes) * 100) : 0;
                 
-                document.getElementById('progress-percentage').textContent = `${percentage}%`;
+                document.getElementById('progress-count').textContent =
+                    `${checkedBoxes} of ${totalCheckboxes} items`;
+                document.getElementById('progress-percentage').textContent = `(${percentage}%)`;
                 document.getElementById('progress-fill').style.width = `${percentage}%`;
+            }
+
+            // ---- Quantities (Feature) ----
+            saveQuantities() {
+                const quantities = {};
+                document.querySelectorAll('.qty-input').forEach(input => {
+                    const id = input.dataset.qtyFor;
+                    if (id && input.value !== '') {
+                        quantities[id] = input.value;
+                    }
+                });
+                localStorage.setItem('provisioning-quantities', JSON.stringify(quantities));
+            }
+
+            loadQuantities() {
+                const quantities = JSON.parse(localStorage.getItem('provisioning-quantities') || '{}');
+                document.querySelectorAll('.qty-input').forEach(input => {
+                    const id = input.dataset.qtyFor;
+                    if (id && Object.prototype.hasOwnProperty.call(quantities, id)) {
+                        input.value = quantities[id];
+                    }
+                });
+            }
+
+            // ---- Reset All (Feature) ----
+            resetAll() {
+                const confirmed = confirm(
+                    'Reset everything?\n\nThis will uncheck all items, clear all quantities ' +
+                    'and remove every custom item you added. This cannot be undone.'
+                );
+                if (!confirmed) return;
+
+                localStorage.removeItem('provisioning-progress');
+                localStorage.removeItem('provisioning-custom-items');
+                localStorage.removeItem('provisioning-quantities');
+
+                // Uncheck and clear preset items
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                    const item = cb.closest('.item');
+                    if (item) item.classList.remove('checked');
+                });
+                document.querySelectorAll('.qty-input').forEach(q => { q.value = ''; });
+
+                // Remove all custom items
+                document.querySelectorAll('.custom-items-list').forEach(list => {
+                    list.innerHTML = '';
+                });
+
+                this.updateProgress();
+            }
+
+            // ---- Nautical Water Calculator (Feature) ----
+            setupCalculator() {
+                this.calcOverlay = document.getElementById('calc-overlay');
+                ['calc-people', 'calc-days', 'calc-litres', 'calc-reserve'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => this.computeWater());
+                });
+                // Close when clicking the dark overlay (but not the modal itself)
+                this.calcOverlay.addEventListener('click', (e) => {
+                    if (e.target === this.calcOverlay) this.closeCalculator();
+                });
+                // Close on Escape
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.calcOverlay.classList.contains('open')) {
+                        this.closeCalculator();
+                    }
+                });
+                this.computeWater();
+            }
+
+            openCalculator() {
+                this.calcOverlay.classList.add('open');
+                this.computeWater();
+            }
+
+            closeCalculator() {
+                this.calcOverlay.classList.remove('open');
+            }
+
+            computeWater() {
+                const people = Math.max(0, parseFloat(document.getElementById('calc-people').value) || 0);
+                const days = Math.max(0, parseFloat(document.getElementById('calc-days').value) || 0);
+                const litres = Math.max(0, parseFloat(document.getElementById('calc-litres').value) || 0);
+                const reserve = Math.max(0, parseFloat(document.getElementById('calc-reserve').value) || 0);
+
+                const base = people * days * litres;
+                const total = base * (1 + reserve / 100);
+
+                document.getElementById('calc-total').textContent = total.toFixed(1);
+                document.getElementById('calc-breakdown').textContent =
+                    `${people} crew × ${days} days × ${litres} L/day = ${base.toFixed(1)} L` +
+                    (reserve > 0 ? ` + ${reserve}% reserve` : '');
             }
 
             // Save progress to localStorage
