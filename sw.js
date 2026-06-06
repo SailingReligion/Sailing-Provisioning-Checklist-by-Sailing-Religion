@@ -1,11 +1,21 @@
-const CACHE_NAME = 'sailing-religion-provisioning-v1';
+const CACHE_NAME = 'sailing-religion-provisioning-v2';
 
+// Relative paths resolved against the Service Worker scope.
+// This works both on GitHub Pages (served under a sub-path) and locally.
 const urlsToCache = [
-  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/',
-  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/index.html',
-  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/manifest.json',
-  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/icon-192x192.png',
-  '/Sailing-Provisioning-Checklist-by-Sailing-Religion/icon-512x512.png'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-72x72.png',
+  './icon-96x96.png',
+  './icon-120x120.png',
+  './icon-128x128.png',
+  './icon-144x144.png',
+  './icon-152x152.png',
+  './icon-180x180.png',
+  './icon-192x192.png',
+  './icon-384x384.png',
+  './icon-512x512.png'
 ];
 
 // Install event - cache resources
@@ -76,7 +86,7 @@ self.addEventListener('fetch', function(event) {
         // Fallback for offline scenarios
         console.log('Service Worker: Network failed, serving offline fallback');
         if (event.request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       })
   );
@@ -99,8 +109,8 @@ self.addEventListener('push', function(event) {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/icon-192x192.png',
-      badge: '/icon-72x72.png',
+      icon: './icon-192x192.png',
+      badge: './icon-72x72.png',
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),
