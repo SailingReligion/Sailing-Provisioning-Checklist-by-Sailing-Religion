@@ -1151,6 +1151,19 @@
             });
         }
 
+        // Current application version. Bump this on every release that should
+        // force existing users to refresh (shows the Force Update modal).
+        const APP_VERSION = '2.1';
+
+        // localStorage keys used across the app.
+        const LS_KEYS = {
+            progress: 'provisioning-progress',
+            custom: 'provisioning-custom-items',
+            quantities: 'provisioning-quantities',
+            version: 'provisioning-app-version',
+            token: 'github-gist-token'
+        };
+
         // Main Application Logic
         class ProvisioningChecklist {
             constructor() {
@@ -1164,6 +1177,8 @@
                 this.setupEventListeners();
                 this.setupCalculator();
                 this.updateProgress();
+                this.checkVersion();           // Force Update gate
+                this.checkIncomingShare();     // auto-import from ?gist= link
             }
 
             // Inject a quantity number input into every preset checklist item.
