@@ -1479,6 +1479,458 @@
                     });
                 });
             }
+
+            // ============================================================
+            //  Shared helpers: data access, notifications, UI refresh
+            // ============================================================
+
+            // Toast notification (type: success | error | info)
+            notify(message, type = 'info', ms = 3200) {
+                const container = document.getElementById('toast-container');
+                if (!container) { return; }
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;            // safe: textContent, no HTML injection
+                container.appendChild(toast);
+                requestAnimationFrame(() => toast.classList.add('show'));
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, ms);
+            }
+
+            // Read all user data from localStorage as a plain object.
+            getAllData() {
+                return {
+                    checkedItems: JSON.parse(localStorage.getItem(LS_KEYS.progress) || '{}'),
+                    quantities: JSON.parse(localStorage.getItem(LS_KEYS.quantities) || '{}'),
+                    customItems: JSON.parse(localStorage.getItem(LS_KEYS.custom) || '{}')
+                };
+            }
+
+            // Write a data object back to localStorage.
+            setAllData(data) {
+                localStorage.setItem(LS_KEYS.progress, JSON.stringify(data.checkedItems || {}));
+                localStorage.setItem(LS_KEYS.quantities, JSON.stringify(data.quantities || {}));
+                localStorage.setItem(LS_KEYS.custom, JSON.stringify(data.customItems || {}));
+            }
+
+            // Re-render the whole checklist from localStorage (after an import).
+            refreshUI() {
+                document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                    cb.checked = false;
+                    const item = cb.closest('.item');
+                    if (item) item.classList.remove('checked');
+                });
+                document.querySelectorAll('.qty-input').forEach(q => { q.value = ''; });
+                document.querySelectorAll('.custom-items-list').forEach(l => { l.innerHTML = ''; });
+                this.loadProgress();     // re-adds custom items + restores checks
+                this.loadQuantities();   // restores quantity inputs
+                this.updateProgress();
+            }
+
+            // ============================================================
+            //  Feature 1: Force Update Modal
+            // ============================================================
+            checkVersion() {
+                const stored = localStorage.getItem(LS_KEYS.version);
+                const hasData = !!(localStorage.getItem(LS_KEYS.progress) ||
+                                   localStorage.getItem(LS_KEYS.custom) ||
+                                   localStorage.getItem(LS_KEYS.quantities));
+                if (!stored) {
+                    if (hasData) {
+                        // Returning user from a pre-versioning release -> force update.
+                        this.showUpdateModal();
+                    } else {
+                        // Brand-new install -> record version silently.
+                        localStorage.setItem(LS_KEYS.version, APP_VERSION);
+                    }
+                    return;
+                }
+                if (stored !== APP_VERSION) {
+                    this.showUpdateModal();
+                }
+            }
+
+            showUpdateModal() {
+                document.getElementById('update-overlay').classList.add('open');
+            }
+
+            applyUpdate() {
+                localStorage.setItem(LS_KEYS.version, APP_VERSION);
+                document.getElementById('update-overlay').classList.remove('open');
+                window.location.reload(true);
+            }
+
+            // ============================================================
+            //  Feature 2: Export
+            // ============================================================
+            exportData() {
+                const payload = {
+                    app: 'Sailing Religion Provisioning',
+                    version: APP_VERSION,
+                    createdAt: new Date().toISOString(),
+                    data: this.getAllData()
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `provisioning-backup-${date}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                this.notify('Data exported successfully', 'success');
+            }
+
+            // ============================================================
+            //  Feature 3: Share (GitHub Gist + QR code)
+            // ============================================================
+            openShareModal() {
+                document.getElementById('share-overlay').classList.add('open');
+                if (localStorage.getItem(LS_KEYS.token)) {
+                    this.doShare();
+                } else {
+                    this.renderShareTokenPrompt();
+                }
+            }
+
+            closeShareModal() {
+                document.getElementById('share-overlay').classList.remove('open');
+            }
+
+            renderShareTokenPrompt(errorMsg) {
+                const body = document.getElementById('share-body');
+                const tokenUrl = 'https://github.com/settings/tokens/new?scopes=gist&description=Sailing%20Provisioning%20Share';
+                body.innerHTML =
+                    '<div class="token-box">' +
+                        '<label>Sharing uploads your list to a private GitHub Gist. Paste a GitHub ' +
+                        'Personal Access Token with the <strong>gist</strong> scope. ' +
+                        'It is stored only on this device.</label>' +
+                        '<input type="password" id="share-token-input" placeholder="ghp_... or github_pat_...">' +
+                        '<a href="' + tokenUrl + '" target="_blank" rel="noopener">Create a token &rarr;</a>' +
+                    '</div>' +
+                    (errorMsg ? '<p class="valid-note" style="color:#fca5a5">' + errorMsg + '</p>' : '') +
+                    '<button type="button" class="primary-btn" onclick="app.saveTokenAndShare()">Save &amp; Share</button>';
+            }
+
+            saveTokenAndShare() {
+                const input = document.getElementById('share-token-input');
+                const val = input ? input.value.trim() : '';
+                if (!val) { this.notify('Please enter a token', 'error'); return; }
+                localStorage.setItem(LS_KEYS.token, val);
+                this.doShare();
+            }
+
+            clearTokenAndPrompt() {
+                localStorage.removeItem(LS_KEYS.token);
+                this.renderShareTokenPrompt();
+            }
+
+            async doShare() {
+                const body = document.getElementById('share-body');
+                body.innerHTML = '<p class="valid-note"><span class="spinner"></span>Uploading your data...</p>';
+                const now = Date.now();
+                const payload = {
+                    app: 'Sailing Religion Provisioning',
+                    version: APP_VERSION,
+                    createdAt: new Date(now).toISOString(),
+                    expiresAt: new Date(now + 24 * 60 * 60 * 1000).toISOString(),
+                    data: this.getAllData()
+                };
+                const token = localStorage.getItem(LS_KEYS.token);
+                try {
+                    const res = await fetch('https://api.github.com/gists', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'token ' + token,
+                            'Accept': 'application/vnd.github+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            description: 'Sailing Provisioning shared list (valid 24h)',
+                            public: false,
+                            files: { 'provisioning-share.json': { content: JSON.stringify(payload) } }
+                        })
+                    });
+                    if (res.status === 401) {
+                        localStorage.removeItem(LS_KEYS.token);
+                        this.renderShareTokenPrompt('That token was rejected (401). Please try again.');
+                        return;
+                    }
+                    if (!res.ok) { throw new Error('GitHub responded with ' + res.status); }
+                    const gist = await res.json();
+                    this.renderShareResult(gist.id);
+                } catch (err) {
+                    body.innerHTML =
+                        '<p class="valid-note" style="color:#fca5a5">Upload failed: ' + err.message +
+                        '. Check your connection and try again.</p>' +
+                        '<button type="button" class="primary-btn" onclick="app.doShare()">Retry</button>' +
+                        '<button type="button" class="secondary-btn" style="width:100%;margin-top:10px" ' +
+                        'onclick="app.clearTokenAndPrompt()">Use a different token</button>';
+                    this.notify('Share failed', 'error');
+                }
+            }
+
+            renderShareResult(gistId) {
+                const base = location.origin + location.pathname;
+                const link = base + '?gist=' + gistId;
+                const shortCode = gistId.slice(-6);
+                const body = document.getElementById('share-body');
+                body.innerHTML =
+                    '<div id="qrcode"></div>' +
+                    '<div class="short-code">' + shortCode + '</div>' +
+                    '<p class="valid-note">Short code (last 6 of gist ID)</p>' +
+                    '<p class="valid-note">⏳ Valid for 24 hours</p>' +
+                    '<div class="share-link-box">' +
+                        '<input type="text" id="share-link-input" readonly value="' + link + '">' +
+                        '<button type="button" class="secondary-btn" onclick="app.copyShareLink()">Copy Link</button>' +
+                    '</div>';
+                const qrEl = document.getElementById('qrcode');
+                qrEl.innerHTML = '';
+                if (window.QRCode) {
+                    new QRCode(qrEl, {
+                        text: link, width: 180, height: 180,
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                } else {
+                    qrEl.innerHTML = '<p style="color:#1e3a8a">QR library not loaded</p>';
+                }
+                this.notify('Share link created', 'success');
+            }
+
+            copyShareLink() {
+                const input = document.getElementById('share-link-input');
+                if (!input) return;
+                const text = input.value;
+                const done = () => this.notify('Link copied to clipboard', 'success');
+                const fallback = () => { input.select(); try { document.execCommand('copy'); } catch (e) {} done(); };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done).catch(fallback);
+                } else {
+                    fallback();
+                }
+            }
+
+            // ============================================================
+            //  Feature 4: Import (file / paste / QR scan)
+            // ============================================================
+            openImportModal() {
+                document.getElementById('import-overlay').classList.add('open');
+                if (!this._importWired) {
+                    const fileInput = document.getElementById('import-file');
+                    fileInput.addEventListener('change', (e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (file) this.importFromFile(file);
+                    });
+                    this._importWired = true;
+                }
+            }
+
+            closeImportModal() {
+                document.getElementById('import-overlay').classList.remove('open');
+                this.stopQrScanner();
+            }
+
+            importFromFile(file) {
+                const reader = new FileReader();
+                reader.onload = () => this.handleImportText(reader.result);
+                reader.onerror = () => this.notify('Could not read file', 'error');
+                reader.readAsText(file);
+            }
+
+            importFromPaste() {
+                const ta = document.getElementById('import-paste');
+                const text = (ta.value || '').trim();
+                if (!text) { this.notify('Please paste a link, code or JSON', 'error'); return; }
+                this.handleImportText(text);
+            }
+
+            // Decide whether the text is raw JSON or a link/gist id, then load data.
+            async handleImportText(text) {
+                text = (text || '').trim();
+                try {
+                    let parsed;
+                    if (text.startsWith('{')) {
+                        parsed = JSON.parse(text);
+                    } else {
+                        const gistId = this.extractGistId(text);
+                        if (!gistId) {
+                            this.notify('Could not recognise that link or code', 'error');
+                            return;
+                        }
+                        this.notify('Fetching shared data...', 'info');
+                        parsed = await this.fetchGist(gistId);
+                    }
+                    if (parsed && parsed.expiresAt && Date.now() > Date.parse(parsed.expiresAt)) {
+                        this.notify('This shared link has expired (valid 24h)', 'error');
+                        return;
+                    }
+                    const data = this.extractData(parsed);
+                    this.pendingImport = data;
+                    this.openImportMode();
+                } catch (err) {
+                    this.notify('Import failed: ' + err.message, 'error');
+                }
+            }
+
+            extractGistId(text) {
+                text = (text || '').trim();
+                // 1. Our own share link: ...?gist=<id>
+                let m = text.match(/[?&]gist=([0-9a-fA-F]+)/);
+                if (m) return m[1];
+                // 2. A gist.github.com URL: grab the last hex path segment (>=8 chars)
+                if (/gist\.github\.com/i.test(text)) {
+                    const segs = text.split(/[\/?#]/).filter(Boolean);
+                    for (let i = segs.length - 1; i >= 0; i--) {
+                        if (/^[0-9a-fA-F]{8,}$/.test(segs[i])) return segs[i];
+                    }
+                }
+                // 3. Generic gist/<id> or gist=<id>
+                m = text.match(/gist[\/=]([0-9a-fA-F]{8,})/);
+                if (m) return m[1];
+                // 4. A bare full gist id (>=8 hex chars)
+                m = text.match(/^[0-9a-fA-F]{8,}$/);
+                if (m) return m[0];
+                return null;
+            }
+
+            async fetchGist(id) {
+                const res = await fetch('https://api.github.com/gists/' + id, {
+                    headers: { 'Accept': 'application/vnd.github+json' }
+                });
+                if (!res.ok) throw new Error('Gist not found (' + res.status + ')');
+                const gist = await res.json();
+                const files = gist.files || {};
+                const file = files['provisioning-share.json'] || Object.values(files)[0];
+                if (!file) throw new Error('No data file in gist');
+                let content = file.content;
+                if (file.truncated && file.raw_url) {
+                    const r2 = await fetch(file.raw_url);
+                    content = await r2.text();
+                }
+                return JSON.parse(content);
+            }
+
+            // Normalise and validate an imported payload into {checkedItems, quantities, customItems}.
+            extractData(parsed) {
+                const d = (parsed && parsed.data && typeof parsed.data === 'object') ? parsed.data : parsed;
+                if (!d || typeof d !== 'object') throw new Error('Invalid backup format');
+                if (!('checkedItems' in d) && !('quantities' in d) && !('customItems' in d)) {
+                    throw new Error('Invalid backup format');
+                }
+                return {
+                    checkedItems: (d.checkedItems && typeof d.checkedItems === 'object') ? d.checkedItems : {},
+                    quantities: (d.quantities && typeof d.quantities === 'object') ? d.quantities : {},
+                    customItems: (d.customItems && typeof d.customItems === 'object') ? d.customItems : {}
+                };
+            }
+
+            openImportMode() {
+                document.getElementById('mode-overlay').classList.add('open');
+            }
+
+            resolveImportMode(mode) {
+                document.getElementById('mode-overlay').classList.remove('open');
+                if (!mode) { this.pendingImport = null; return; }
+                this.applyImport(this.pendingImport, mode);
+                this.pendingImport = null;
+            }
+
+            applyImport(data, mode) {
+                if (!data) return;
+                const merged = (mode === 'overwrite') ? data : this.mergeData(this.getAllData(), data);
+                this.setAllData(merged);
+                this.refreshUI();
+                this.closeImportModal();
+                this.notify('Data imported successfully', 'success');
+            }
+
+            mergeData(cur, inc) {
+                // Checked items: union (a checked item stays checked).
+                const checkedItems = Object.assign({}, cur.checkedItems);
+                Object.keys(inc.checkedItems).forEach(k => {
+                    checkedItems[k] = !!(cur.checkedItems[k] || inc.checkedItems[k]);
+                });
+                // Quantities: incoming values override existing ones.
+                const quantities = Object.assign({}, cur.quantities, inc.quantities);
+                // Custom items: keep existing, append new ones (de-duplicated by text per section).
+                const customItems = {};
+                const sections = new Set([
+                    ...Object.keys(cur.customItems || {}),
+                    ...Object.keys(inc.customItems || {})
+                ]);
+                sections.forEach(sec => {
+                    const existing = (cur.customItems[sec] || []).slice();
+                    const texts = new Set(existing.map(i => (i.text || '').toLowerCase()));
+                    (inc.customItems[sec] || []).forEach(i => {
+                        const tx = (i.text || '').toLowerCase();
+                        if (!texts.has(tx)) {
+                            const newId = 'custom-' + sec + '-' + Date.now() + '-' + Math.floor(Math.random() * 100000);
+                            existing.push({ id: newId, text: i.text, checked: !!i.checked });
+                            texts.add(tx);
+                            if (i.checked) checkedItems[newId] = true;
+                        }
+                    });
+                    customItems[sec] = existing;
+                });
+                return { checkedItems, quantities, customItems };
+            }
+
+            // ---- QR scanner (camera) ----
+            toggleQrScanner() {
+                if (this._qrActive) { this.stopQrScanner(); return; }
+                if (!window.Html5Qrcode) { this.notify('QR scanner library not loaded', 'error'); return; }
+                const btn = document.getElementById('qr-scan-btn');
+                this._qr = new Html5Qrcode('qr-reader');
+                this._qrActive = true;
+                btn.textContent = 'Stop Camera';
+                this._qr.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: 220 },
+                    (decodedText) => {
+                        this.stopQrScanner();
+                        this.handleImportText(decodedText);
+                    },
+                    () => { /* ignore per-frame decode errors */ }
+                ).catch(err => {
+                    this._qrActive = false;
+                    btn.textContent = 'Start Camera';
+                    this.notify('Camera error: ' + err, 'error');
+                });
+            }
+
+            stopQrScanner() {
+                const btn = document.getElementById('qr-scan-btn');
+                if (btn) btn.textContent = 'Start Camera';
+                if (this._qr && this._qrActive) {
+                    this._qr.stop().then(() => { this._qr.clear(); }).catch(() => {});
+                }
+                this._qrActive = false;
+            }
+
+            // Auto-import when the app is opened from a share link (?gist=ID).
+            async checkIncomingShare() {
+                const params = new URLSearchParams(location.search);
+                const gistId = params.get('gist');
+                if (!gistId) return;
+                try { history.replaceState(null, '', location.origin + location.pathname); } catch (e) {}
+                this.notify('Loading shared list...', 'info');
+                try {
+                    const parsed = await this.fetchGist(gistId);
+                    if (parsed && parsed.expiresAt && Date.now() > Date.parse(parsed.expiresAt)) {
+                        this.notify('This shared link has expired (valid 24h)', 'error');
+                        return;
+                    }
+                    const data = this.extractData(parsed);
+                    this.pendingImport = data;
+                    this.openImportMode();
+                } catch (err) {
+                    this.notify('Could not load shared list: ' + err.message, 'error');
+                }
+            }
         }
 
         // Global function for adding custom items (called from HTML)
