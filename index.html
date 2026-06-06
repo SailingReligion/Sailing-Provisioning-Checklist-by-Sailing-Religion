@@ -460,6 +460,88 @@
             filter: brightness(1.08);
         }
 
+        /* Settings toolbar button */
+        .settings-btn {
+            background: linear-gradient(90deg, #6366f1, #4f46e5);
+            color: #f8fafc;
+        }
+
+        .settings-btn:hover {
+            background: linear-gradient(90deg, #4f46e5, #4338ca);
+            transform: translateY(-2px);
+        }
+
+        /* Quantity input + unit label wrapper */
+        .qty-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+
+        .qty-wrap .qty-input {
+            margin-left: 0;
+        }
+
+        .qty-unit {
+            font-size: 0.85rem;
+            color: #93c5fd;
+            min-width: 32px;
+            text-align: left;
+        }
+
+        /* Settings modal: unit toggles */
+        .settings-group {
+            margin-bottom: 22px;
+        }
+
+        .settings-group > label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #f8fafc;
+        }
+
+        .unit-toggle {
+            display: flex;
+            gap: 0;
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .unit-toggle input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .unit-toggle label {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: rgba(15, 23, 42, 0.6);
+            color: #cbd5e1;
+            transition: all 0.2s ease;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .unit-toggle label + input + label,
+        .unit-toggle label:not(:first-of-type) {
+            border-left: 2px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .unit-toggle input[type="radio"]:checked + label {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            color: #1e3a8a;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -482,6 +564,47 @@
                 flex-direction: column;
             }
         }
+
+        /* Compact phones: keep checkbox + label + quantity usable and tappable.
+           The quantity control wraps onto a second line when the item name is
+           too long, instead of squashing or overflowing. */
+        @media (max-width: 600px) {
+            .item {
+                flex-wrap: wrap;
+                padding: 10px 0;
+            }
+            /* Checkbox: larger, comfortable tap target. */
+            .item input[type="checkbox"] {
+                width: 24px;
+                height: 24px;
+                min-width: 24px;
+                margin-right: 12px;
+            }
+            /* Label takes the remaining width; long names get an ellipsis. */
+            .item label {
+                flex: 1 1 auto;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            /* Quantity control sticks to the right and drops to a new line
+               (full width) when there is not enough room beside the label. */
+            .qty-wrap {
+                margin-left: auto;
+                flex-shrink: 0;
+            }
+            .qty-input {
+                min-height: 44px;
+            }
+            /* Bigger, finger-friendly toolbar buttons. */
+            .tool-btn {
+                min-height: 44px;
+            }
+            .delete-btn {
+                min-height: 44px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -495,7 +618,7 @@
             <!-- Progress Bar -->
             <div class="progress-bar">
                 <div class="progress-text">
-                    <span id="progress-count">0 of 0 items</span>
+                    <span id="progress-count">0/0 items checked</span>
                     <span id="progress-percentage">(0%)</span>
                 </div>
                 <div style="background: rgba(59, 130, 246, 0.3); border-radius: 5px;">
@@ -503,6 +626,7 @@
                 </div>
                 <div class="toolbar">
                     <button type="button" class="tool-btn calc-btn" onclick="app.openCalculator()">🧮 Water Calculator</button>
+                    <button type="button" class="tool-btn settings-btn" onclick="app.openSettings()">⚙️ Settings</button>
                     <button type="button" class="tool-btn reset-btn" onclick="app.resetAll()">♻️ Reset All</button>
                 </div>
             </div>
@@ -874,6 +998,42 @@
         </div>
     </div>
 
+    <!-- Unit Preferences (Settings) Modal -->
+    <div id="settings-overlay" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="settings-title">⚙️ Unit Preferences</h2>
+                <button type="button" class="modal-close" onclick="app.closeSettings()" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint">Choose the units you prefer. Existing quantities are
+                    automatically converted when you change a unit.</p>
+
+                <div class="settings-group">
+                    <label>Weight</label>
+                    <div class="unit-toggle">
+                        <input type="radio" id="weight-kg" name="unit-weight" value="kg" checked>
+                        <label for="weight-kg">kg</label>
+                        <input type="radio" id="weight-lb" name="unit-weight" value="lb">
+                        <label for="weight-lb">lb</label>
+                    </div>
+                </div>
+
+                <div class="settings-group">
+                    <label>Volume</label>
+                    <div class="unit-toggle">
+                        <input type="radio" id="volume-l" name="unit-volume" value="L" checked>
+                        <label for="volume-l">L</label>
+                        <input type="radio" id="volume-gal" name="unit-volume" value="gal">
+                        <label for="volume-gal">gal</label>
+                    </div>
+                </div>
+
+                <button type="button" class="primary-btn" onclick="app.saveSettings()">Save Preferences</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // PWA Service Worker Registration
         if ('serviceWorker' in navigator) {
@@ -892,6 +1052,24 @@
         // mandatory update notification for returning users.
         const APP_VERSION = '2.1';
         const VERSION_KEY = 'provisioning-app-version';
+        const UNITS_KEY = 'provisioning-units';
+
+        // Item categorisation for unit handling.
+        // Volume items are measured in litres/gallons, count items in plain
+        // units (no conversion), and everything else defaults to weight (kg/lb).
+        const VOLUME_ITEMS = [
+            'water-bottles', 'sports-drinks', 'fruit-juices', 'beer-wine',
+            'olive-oil', 'vinegar', 'hot-sauce', 'soy-sauce'
+        ];
+        const COUNT_ITEMS = [
+            'tea-bags', 'canned-beans', 'canned-tomatoes', 'canned-fish',
+            'tortillas', 'eggs'
+        ];
+
+        // Conversion constants.
+        const KG_TO_LB = 2.20462;
+        const L_TO_GAL = 0.264172;
+        const round1 = (n) => Math.round(n * 10) / 10;
 
         // Main Application Logic
         class ProvisioningChecklist {
@@ -900,13 +1078,106 @@
             }
 
             init() {
+                this.units = this.loadUnits();  // {weight:'kg'|'lb', volume:'L'|'gal'}
                 this.addQuantityInputs();      // inject qty input into preset items
                 this.loadProgress();
                 this.loadQuantities();
+                this.refreshUnitLabels();      // render the correct unit next to each input
                 this.setupEventListeners();
                 this.setupCalculator();
                 this.updateProgress();
                 this.checkVersion();           // show mandatory update modal if needed
+            }
+
+            // ---- Units / Settings (Feature) ----
+            // Determine which measurement family an item belongs to.
+            getItemCategory(itemId) {
+                if (!itemId || itemId.startsWith('custom-')) return 'count';
+                if (VOLUME_ITEMS.includes(itemId)) return 'volume';
+                if (COUNT_ITEMS.includes(itemId)) return 'count';
+                return 'weight';
+            }
+
+            // The unit label shown next to a quantity input for a given item.
+            getUnitLabel(itemId) {
+                const cat = this.getItemCategory(itemId);
+                if (cat === 'weight') return this.units.weight;
+                if (cat === 'volume') return this.units.volume;
+                return 'units';
+            }
+
+            // Load unit preferences, defaulting to metric (kg + L).
+            loadUnits() {
+                const defaults = { weight: 'kg', volume: 'L' };
+                try {
+                    const saved = JSON.parse(localStorage.getItem(UNITS_KEY) || '{}');
+                    return {
+                        weight: (saved.weight === 'lb') ? 'lb' : 'kg',
+                        volume: (saved.volume === 'gal') ? 'gal' : 'L'
+                    };
+                } catch (e) {
+                    return defaults;
+                }
+            }
+
+            // Update every visible unit label to match current preferences.
+            refreshUnitLabels() {
+                document.querySelectorAll('.qty-unit').forEach(span => {
+                    const id = span.dataset.unitFor;
+                    span.textContent = this.getUnitLabel(id);
+                });
+            }
+
+            openSettings() {
+                // Reflect current preferences in the radio buttons before showing.
+                const w = document.querySelector(`input[name="unit-weight"][value="${this.units.weight}"]`);
+                const v = document.querySelector(`input[name="unit-volume"][value="${this.units.volume}"]`);
+                if (w) w.checked = true;
+                if (v) v.checked = true;
+                const overlay = document.getElementById('settings-overlay');
+                if (overlay) overlay.classList.add('open');
+            }
+
+            closeSettings() {
+                const overlay = document.getElementById('settings-overlay');
+                if (overlay) overlay.classList.remove('open');
+            }
+
+            saveSettings() {
+                const newWeight = (document.querySelector('input[name="unit-weight"]:checked') || {}).value || 'kg';
+                const newVolume = (document.querySelector('input[name="unit-volume"]:checked') || {}).value || 'L';
+                const oldWeight = this.units.weight;
+                const oldVolume = this.units.volume;
+
+                // Convert existing quantities so the numbers stay meaningful.
+                this.convertQuantities(oldWeight, newWeight, oldVolume, newVolume);
+
+                this.units = { weight: newWeight, volume: newVolume };
+                localStorage.setItem(UNITS_KEY, JSON.stringify(this.units));
+
+                this.refreshUnitLabels();
+                this.saveQuantities();
+                this.closeSettings();
+            }
+
+            // Convert all on-screen quantities when units change. Weight items
+            // convert between kg/lb, volume items between L/gal; counts are
+            // left untouched. Values are rounded to one decimal place.
+            convertQuantities(oldW, newW, oldV, newV) {
+                document.querySelectorAll('.qty-input').forEach(input => {
+                    if (input.value === '') return;
+                    const num = parseFloat(input.value);
+                    if (isNaN(num)) return;
+                    const cat = this.getItemCategory(input.dataset.qtyFor);
+                    let result = num;
+                    if (cat === 'weight' && oldW !== newW) {
+                        result = (newW === 'lb') ? num * KG_TO_LB : num / KG_TO_LB;
+                        input.value = round1(result);
+                    } else if (cat === 'volume' && oldV !== newV) {
+                        result = (newV === 'gal') ? num * L_TO_GAL : num / L_TO_GAL;
+                        input.value = round1(result);
+                    }
+                });
             }
 
             // Decide whether the mandatory update modal should be shown.
@@ -966,18 +1237,50 @@
                 });
             }
 
-            // Build a quantity input bound to a given item id.
+            // Build a quantity input (with its unit label) bound to an item id.
             createQuantityInput(itemId) {
+                const wrap = document.createElement('div');
+                wrap.className = 'qty-wrap';
+
                 const qty = document.createElement('input');
                 qty.type = 'number';
                 qty.min = '0';
-                qty.step = '1';
+                qty.step = 'any';
                 qty.className = 'qty-input';
                 qty.placeholder = 'Qty';
                 qty.setAttribute('aria-label', 'Quantity');
                 qty.dataset.qtyFor = itemId;
-                qty.addEventListener('input', () => this.saveQuantities());
-                return qty;
+                qty.addEventListener('input', () => this.handleQuantityInput(qty));
+
+                const unit = document.createElement('span');
+                unit.className = 'qty-unit';
+                unit.dataset.unitFor = itemId;
+                unit.textContent = this.getUnitLabel(itemId);
+
+                wrap.appendChild(qty);
+                wrap.appendChild(unit);
+                return wrap;
+            }
+
+            // Auto-check / auto-uncheck an item based on its quantity, then
+            // persist and refresh progress. A positive quantity marks the item
+            // as packed; clearing it (0 or empty) unmarks it.
+            handleQuantityInput(input) {
+                const itemId = input.dataset.qtyFor;
+                const checkbox = document.getElementById(itemId);
+                if (checkbox) {
+                    const val = parseFloat(input.value);
+                    const shouldCheck = !isNaN(val) && val > 0;
+                    if (checkbox.checked !== shouldCheck) {
+                        checkbox.checked = shouldCheck;
+                        const item = checkbox.closest('.item');
+                        if (item) item.classList.toggle('checked', shouldCheck);
+                        this.saveProgress();
+                        if (itemId.startsWith('custom-')) this.saveCustomItems();
+                    }
+                }
+                this.saveQuantities();
+                this.updateProgress();
             }
 
             // Setup all event listeners
@@ -1094,7 +1397,7 @@
                 const percentage = totalCheckboxes > 0 ? Math.round((checkedBoxes / totalCheckboxes) * 100) : 0;
                 
                 document.getElementById('progress-count').textContent =
-                    `${checkedBoxes} of ${totalCheckboxes} items`;
+                    `${checkedBoxes}/${totalCheckboxes} items checked`;
                 document.getElementById('progress-percentage').textContent = `(${percentage}%)`;
                 document.getElementById('progress-fill').style.width = `${percentage}%`;
             }
@@ -1124,10 +1427,16 @@
             // ---- Reset All (Feature) ----
             resetAll() {
                 const confirmed = confirm(
-                    'Reset everything?\n\nThis will uncheck all items, clear all quantities ' +
-                    'and remove every custom item you added. This cannot be undone.'
+                    '⚠️ This will permanently delete ALL data including checked items, ' +
+                    'quantities, and custom items. This action cannot be undone. Are you sure?'
                 );
                 if (!confirmed) return;
+
+                // Double confirmation for such a destructive action.
+                const reallySure = confirm(
+                    'Last chance — there is no undo. Delete everything and start fresh?'
+                );
+                if (!reallySure) return;
 
                 localStorage.removeItem('provisioning-progress');
                 localStorage.removeItem('provisioning-custom-items');
